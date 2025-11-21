@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elifime ❤️</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at bottom, #0b1026 0%, #000000 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #e2e8f0;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+        }
+
+        /* --- STATİK ARKA PLAN KATMANI --- */
+        .stars-bg-static {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent;
+            z-index: 0;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 1.5px),
+                radial-gradient(white, rgba(255,255,255,.1) 1px, transparent 1.5px);
+            background-size: 550px 550px, 350px 350px;
+            opacity: 0.6;
+        }
+
+        /* --- HAREKETLİ KÜÇÜK YILDIZLAR KATMANI --- */
+        .moving-stars-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .tiny-star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.4);
+            animation: moveAndTwinkle linear infinite;
+        }
+
+        @keyframes moveAndTwinkle {
+            0% { transform: translateY(0) translateX(0); opacity: 0.2; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-100px) translateX(20px); opacity: 0.2; }
+        }
+
+        /* --- AY VE TARİH --- */
+        .moon-container {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            z-index: 50; /* En üstte olsun ki tıklansın */
+            filter: drop-shadow(0 0 20px rgba(200, 200, 255, 0.4));
+            cursor: pointer;
+            transition: all 0.5s ease;
+        }
+
+        /* Ay'a gelince hafif büyüme efekti */
+        .moon-container:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.8));
+        }
+
+        /* SOL ALT TARİH */
+        .date-badge {
+            position: absolute;
+            bottom: 30px;
+            left: 40px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            padding-left: 15px;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- İNTERAKTİF YILDIZLAR --- */
+        .star-wrapper {
+            position: absolute;
+            width: 30px; height: 30px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: default; transition: transform 0.3s;
+            z-index: 10;
+        }
+
+        .star-shape {
+            position: relative;
+            width: 4px; height: 15px;
+            background: #475569; border-radius: 50%;
+            transition: all 0.8s ease;
+        }
+        .star-shape::before {
+            content: ''; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 15px; height: 4px;
+            background: #475569; border-radius: 50%;
+            transition: all 0.8s ease;
+        }
+
+        .star-wrapper.unlocked {
+            cursor: pointer;
+            filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 20px cyan);
+            animation: starPulse 3s infinite;
+        }
+        .star-wrapper.unlocked .star-shape, 
+        .star-wrapper.unlocked .star-shape::before {
+            background: #fff; width: 6px; height: 25px; 
+        }
+        .star-wrapper.unlocked .star-shape::before { width: 25px; height: 6px; }
+
+        .star-wrapper::after {
+            content: '🔒'; position: absolute; top: -25px;
+            font-size: 12px; opacity: 0; transition: opacity 0.3s;
+        }
+        .star-wrapper:hover::after { opacity: 1; }
+        .star-wrapper.unlocked::after { content: ''; } 
+
+        @keyframes starPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        /* Düzeltilmiş Yıldız Konumları */
+        #star1 { top: 20%; right: 25%; }
+        #star2 { top: 30%; left: 15%; }
+        #star3 { bottom: 35%; right: 20%; }
+        #star4 { top: 15%; left: 50%; transform: translateX(-50%); }
+        #star5 { bottom: 20%; left: 25%; }
+        #star6 { bottom: 15%; right: 10%; } /* Sayacın arkasından kurtarıldı */
+
+        /* --- TIMER PANELİ --- */
+        .timer-panel {
+            position: relative; z-index: 20;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 40px 60px; border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center; width: 320px;
+        }
+
+        .timer-display {
+            font-family: 'Cinzel', serif; font-size: 5rem;
+            font-weight: 700; color: #fff;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            margin-bottom: 10px; letter-spacing: 2px;
+        }
+
+        .status-label {
+            font-size: 0.9rem; text-transform: uppercase;
+            letter-spacing: 4px; color: #94a3b8; margin-bottom: 30px;
+        }
+
+        .controls { display: flex; justify-content: center; gap: 20px; }
+
+        .btn-control {
+            background: transparent; border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff; padding: 12px 25px; border-radius: 50px;
+            font-family: 'Montserrat', sans-serif; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.3s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-control:hover {
+            background: rgba(255, 255, 255, 0.1); border-color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+        .btn-skip { border-color: transparent; color: #64748b; }
+        .btn-skip:hover { color: #fff; text-shadow: 0 0 10px white; }
+
+        /* --- CUSTOM ALERT (POP-UP) --- */
+        .custom-alert {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: rgba(16, 185, 129, 0.9); color: white;
+            padding: 15px 30px; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 200;
+            display: flex; align-items: center; gap: 15px;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: 500; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .custom-alert.show { top: 30px; }
+
+        /* --- MESSAGE MODAL --- */
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 150;
+            justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.4s;
+        }
+        .modal-overlay.visible { display: flex; opacity: 1; }
+
+        .modal-box {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            padding: 50px; border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center; max-width: 450px;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        .modal-msg { font-size: 1.3rem; line-height: 1.6; color: #f8fafc; }
+        .close-modal {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 1.5rem; cursor: pointer; color: #64748b;
+        }
+        .close-modal:hover { color: #fff; }
+
+        /* --- SES KONTROL --- */
+        .audio-panel {
+            position: absolute; bottom: 30px; right: 40px; z-index: 50;
+            display: flex; align-items: center; gap: 15px;
+            background: rgba(0,0,0,0.5); padding: 10px 20px;
+            border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
+            transition: opacity 0.3s;
+        }
+        .audio-panel:hover { background: rgba(0,0,0,0.8); }
+        .mute-btn {
+            background: none; border: none; font-size: 1.2rem;
+            cursor: pointer; color: rgba(255,255,255,0.7);
+        }
+        .mute-btn:hover { color: #fff; }
+        input[type=range] { width: 80px; height: 4px; accent-color: #fff; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop autoplay>
+        <source src="pws_20050512.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="custom-alert" id="customAlert">
+        <span style="font-size: 1.5rem;">✨</span>
+        <span id="alertText">Yeni bir yıldız parladı!</span>
+    </div>
+
+    <div class="date-badge">
+        05.12.2005<br>
+        <span style="font-size:0.7em; text-transform: uppercase; letter-spacing: 2px;">İstanbul</span>
+    </div>
+
+    <div class="stars-bg-static"></div>
+    <div class="moving-stars-layer" id="movingStarsContainer"></div>
+
+<div class="moon-container" onclick="showMoonMessage()" title="Bana Tıkla 🌑">
+        <svg width="150" height="150" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(-20deg); filter: drop-shadow(0 0 10px rgba(226, 232, 240, 0.6));">
+            
+            <circle cx="50" cy="50" r="40" fill="#334155" opacity="0.5"/> 
+            
+            <path d="M50 10
+                     C 75 10, 90 28, 90 50
+                     C 90 72, 75 90, 50 90
+                     C 65 90, 78 75, 78 50
+                     C 78 25, 65 10, 50 10 Z" 
+                  fill="#e2e8f0"/>
+        </svg>
+    </div>
+
+    <div id="star1" class="star-wrapper" onclick="openMessage(0)"><div class="star-shape"></div></div>
+    <div id="star2" class="star-wrapper" onclick="openMessage(1)"><div class="star-shape"></div></div>
+    <div id="star3" class="star-wrapper" onclick="openMessage(2)"><div class="star-shape"></div></div>
+    <div id="star4" class="star-wrapper" onclick="openMessage(3)"><div class="star-shape"></div></div>
+    <div id="star5" class="star-wrapper" onclick="openMessage(4)"><div class="star-shape"></div></div>
+    <div id="star6" class="star-wrapper" onclick="openMessage(5)"><div class="star-shape"></div></div>
+
+    <div class="timer-panel">
+        <div class="timer-display" id="timer">50:00</div>
+        <div class="status-label" id="statusText">Odaklanma Modu</div>
+        <div class="controls">
+            <button class="btn-control" id="mainBtn" onclick="toggleTimer()">Başlat</button>
+            <button class="btn-control btn-skip" onclick="skipSession()">Geç ⏭</button>
+        </div>
+    </div>
+
+    <div class="audio-panel">
+        <button class="mute-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+        <input type="range" min="0" max="1" step="0.05" value="0.5" oninput="setVolume(this.value)">
+    </div>
+
+    <div class="modal-overlay" id="msgModal">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <p class="modal-msg" id="modalText">...</p>
+        </div>
+    </div>
+
+    <script>
+        // --- HAREKETLİ YILDIZLAR ---
+        function createMovingStars() {
+            const container = document.getElementById('movingStarsContainer');
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.classList.add('tiny-star');
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`; star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                const duration = Math.random() * 20 + 15;
+                const delay = Math.random() * -20;
+                star.style.animationDuration = `${duration}s`;
+                star.style.animationDelay = `${delay}s`;
+                container.appendChild(star);
+            }
+        }
+        createMovingStars();
+
+        // --- AYARLAR ---
+        const WORK_MIN = 50;
+        const BREAK_MIN = 10;
+        const messages = [
+            "Aşkım Yorulduğunu veya Sıkıldığını Biliyorum ama Durmak Yok Devam! Sana İnanıyorum.",
+            "Bravo Sevgilimm Çok İyi Gidiyorsun! Bu Kilidi de Açtın Artık Rahatla.",
+            "Kurban Olduğummm Seninle Gurur Duyuyorum! Harikasın! Böyle Devam.",
+            "En parlak yıldız sensin, bunu sakın unutma. Bu çabaların boşa gitmeyecek Aşkım Balımm.",
+            "Güzelim Yorulduğunu Biliyorum Ama Az Kaldı! Biraz Daha Dayan. Seni Çok Seviyorum.",
+            "Tebrik Ederim Aşkım! Tüm Yıldızları Açtın. Seninle Gurur Duyuyorum! İyi Dinlenmeler ❤️"
+        ];
+
+        let timeLeft = WORK_MIN * 60;
+        let isRunning = false;
+        let isFocusMode = true;
+        let timerId = null;
+        let completedSessions = 0;
+        
+        const timerDisplay = document.getElementById('timer');
+        const statusText = document.getElementById('statusText');
+        const mainBtn = document.getElementById('mainBtn');
+        const stars = document.querySelectorAll('.star-wrapper');
+        const audio = document.getElementById('bgMusic');
+        const muteBtn = document.getElementById('muteBtn');
+
+        // --- ZARİF SES EFEKTİ ---
+        // "Pop" sesi yerine yumuşak bir su damlası/kristal sesi kullanıyoruz
+        function playGentleSound() {
+            const tone = new Audio('https://actions.google.com/sounds/v1/water/water_drop.ogg');
+            tone.volume = 0.5; // Çok yüksek olmasın
+            tone.play().catch(()=>{});
+        }
+
+        document.body.addEventListener('click', () => {
+            if(audio.paused) audio.play().catch(()=>{});
+        }, { once: true });
+
+        function setVolume(val) {
+            audio.volume = val;
+            muteBtn.textContent = val == 0 ? "🔇" : "🔊";
+        }
+
+        function toggleMute() {
+            if(audio.muted) { audio.muted = false; muteBtn.textContent = "🔊"; } 
+            else { audio.muted = true; muteBtn.textContent = "🔇"; }
+        }
+
+        function showAlert(msg) {
+            const alertBox = document.getElementById('customAlert');
+            const alertText = document.getElementById('alertText');
+            alertText.textContent = msg;
+            alertBox.classList.add('show');
+            playGentleSound(); // Zarif ses çal
+            setTimeout(() => { alertBox.classList.remove('show'); }, 4000);
+        }
+
+        function updateDisplay() {
+            const m = Math.floor(timeLeft / 60);
+            const s = timeLeft % 60;
+            timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(timerId); isRunning = false;
+                mainBtn.textContent = "Devam Ettir";
+            } else {
+                isRunning = true; mainBtn.textContent = "Durdur";
+                timerId = setInterval(() => {
+                    timeLeft--; updateDisplay();
+                    if (timeLeft < 0) finishCycle();
+                }, 1000);
+            }
+        }
+
+        function skipSession() {
+            clearInterval(timerId); finishCycle();
+        }
+
+        function finishCycle() {
+            clearInterval(timerId); isRunning = false;
+            if (isFocusMode) {
+                unlockStar();
+                showAlert("Harika! Bir yıldız parladı ✨ Mola Zamanı!");
+                isFocusMode = false; timeLeft = BREAK_MIN * 60;
+                statusText.textContent = "Mola Zamanı ☕";
+                mainBtn.textContent = "Molayı Başlat";
+            } else {
+                showAlert("Mola bitti, tekrar odaklanalım! 🚀");
+                isFocusMode = true; timeLeft = WORK_MIN * 60;
+                statusText.textContent = "Odaklanma Modu";
+                mainBtn.textContent = "Derse Başla";
+            }
+            updateDisplay();
+        }
+
+        function unlockStar() {
+            if (completedSessions < stars.length) {
+                stars[completedSessions].classList.add('unlocked');
+                completedSessions++;
+            }
+        }
+
+        // --- MODAL & AY MESAJI ---
+        const modalOverlay = document.getElementById('msgModal');
+        const modalText = document.getElementById('modalText');
+
+        function openMessage(index) {
+            const star = stars[index];
+            if (star.classList.contains('unlocked')) {
+                modalText.textContent = messages[index];
+                modalOverlay.classList.add('visible');
+                playGentleSound();
+            } else {
+                showAlert("Bu yıldıza ulaşmak için biraz daha çalışmalısın 🔒");
+            }
+        }
+
+        // AY'A TIKLAYINCA ÇIKACAK ÖZEL MESAJ
+        function showMoonMessage() {
+            modalText.innerHTML = "Sen dünyaya gözlerini açtığında, gökyüzünde Ay işte böyle süzülüyordu...<br><br>Belki o gece sadece bir hilaldi ama senin ışığınla beraber tamamlandı ve her zamankinden çok daha parlak oldu. 🌑✨";
+            modalOverlay.classList.add('visible');
+            playGentleSound();
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('visible');
+        }
+
+        modalOverlay.onclick = (e) => {
+            if(e.target === modalOverlay) closeModal();
+        }
+    </script>
+</body>
+</html>
